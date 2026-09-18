@@ -1,20 +1,3 @@
-"""One turn of the autoresearch loop: package, submit, run, read the result.
-
-    python agent/loop.py                  # public samples, about two minutes
-    python agent/loop.py --mode official  # five samples, scored, ranked
-
-This is the outer cycle only. The part that decides *what to change* about
-``engine/engine.py`` is yours, and is the whole exercise; see `plan_next_edit`
-at the bottom. Everything above it exists so that a proposed edit can be turned
-into a measured number without a human in the loop.
-
-Two habits worth keeping from the start. Record every attempt — the edit, the
-archive digest, the run id, and the per-workload numbers — because the hidden
-workloads are the only ones scored and the public three will not always show you
-why a score moved. And never start a second run because the first was slow to
-answer: a poll that times out has not cancelled anything.
-"""
-
 import argparse
 import sys
 from pathlib import Path
@@ -22,15 +5,12 @@ from pathlib import Path
 from client import ApiError, Dryft
 from package import package
 
-#: Time to first token and time per output token may not exceed this multiple
-#: of native's. Official runs enforce it; public runs only report the ratios.
 LATENCY_GATE = 1.10
 
 ENGINE_DIR = Path(__file__).resolve().parent.parent / "engine"
 
 
 def report(detail: dict) -> bool:
-    """Print what the run measured. Returns True if it passed everything."""
     state = detail.get("state")
     result = detail.get("result") or {}
     shapes = result.get("shapes") or []
@@ -111,23 +91,6 @@ def main() -> int:
 
 
 def plan_next_edit(history: list[dict]) -> str:
-    """Decide what to change about the engine next. This is the exercise.
-
-    ``history`` is whatever you have chosen to keep from previous attempts:
-    the edit, the archive digest, the run id, and the per-workload numbers.
-
-    Somewhere to start, using the public workloads for feedback:
-
-    1. Per-step overhead. The baseline pays full Transformers dispatch on every
-       decode step. CUDA graphs, or a step that skips the model wrapper.
-    2. Prefill, which is a large share of a short output's total time.
-    3. A preallocated KV cache, instead of whatever the wrapper returns.
-    4. Fused kernels for the small repeated pieces; see ``engine/kernels``.
-    5. Speculative decoding with exact verification, once the rest is taken.
-
-    Whatever you try, the output tokens must not change. Read AGENTS.md before
-    reaching for anything that alters the arithmetic rather than reordering it.
-    """
     raise NotImplementedError("this is the part you write")
 
 

@@ -1,13 +1,3 @@
-"""Turn ``engine/`` into the archive the platform accepts, and check it first.
-
-The archive holds the *contents* of ``engine/``, not the folder: ``engine.py``
-sits at the root. Paths must be canonical, which is why this exists rather than
-a ``tar`` one-liner — ``tar -C engine .`` writes ``./engine.py`` and is refused.
-
-Everything here is a local check that saves an upload round trip. It says
-nothing about whether your engine is fast, or even correct on a GPU.
-"""
-
 import ast
 import gzip
 import io

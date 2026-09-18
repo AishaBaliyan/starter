@@ -1,14 +1,3 @@
-"""A dependency-free client for the submission API.
-
-Standard library only, so the loop runs wherever Python does. Point it at your
-deployment and give it a team API token, both from the environment::
-
-    export DRYFT_API=https://your-deployment.example
-    export DRYFT_TOKEN=dryft_pat_...
-
-Tokens are created under **Team** in the app. Never commit one.
-"""
-
 import contextlib
 import json
 import os
