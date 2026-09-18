@@ -1,8 +1,6 @@
-import argparse
-import sys
 from pathlib import Path
 
-from client import ApiError, Dryft
+from client import Dryft
 from package import package
 
 LATENCY_GATE = 1.10
@@ -64,35 +62,5 @@ def attempt(client: Dryft, engine_dir: Path, mode: str, timeout: float) -> bool:
     return report(client.wait(run_id, timeout=timeout))
 
 
-def main() -> int:
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--engine", type=Path, default=ENGINE_DIR,
-                        help="the folder whose contents are submitted")
-    parser.add_argument("--mode", choices=("public", "official"), default="public",
-                        help="public samples are feedback; official runs rank")
-    parser.add_argument("--timeout", type=float, default=3000,
-                        help="seconds to poll before giving up on the answer")
-    arguments = parser.parse_args()
-
-    try:
-        client = Dryft()
-        passed = attempt(client, arguments.engine, arguments.mode, arguments.timeout)
-    except ValueError as problem:
-        print(f"the archive was refused before upload: {problem}", file=sys.stderr)
-        return 1
-    except ApiError as problem:
-        print(f"the API refused the request: {problem}", file=sys.stderr)
-        return 1
-    except TimeoutError as problem:
-        print(f"{problem}; the run is still going, look it up rather than starting another",
-              file=sys.stderr)
-        return 3
-    return 0 if passed else 2
-
-
 def plan_next_edit(history: list[dict]) -> str:
     raise NotImplementedError("this is the part you write")
-
-
-if __name__ == "__main__":
-    raise SystemExit(main())

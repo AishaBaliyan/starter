@@ -1,11 +1,7 @@
 # Working in this repository
 
-You are optimizing one number. The score is 100 times the geometric mean, over
-the three hidden workloads, of native Qwen's time divided by yours. 100 is
-native. 150 is one and a half times faster. Nothing else moves it.
-
 Read the engine contract once, in full, before your first edit — the **Docs**
-page at https://dryft-user-testing.vercel.app/docs, or the included
+page at https://htn.dryft.ai/docs, or the included
 `QWEN_ENGINE_CONTRACT.md`.
 This file is the part you must not get wrong.
 
@@ -120,9 +116,10 @@ explains why the obvious version does not.
    **official** run: five samples per workload, the hidden shapes scored, the
    spread gate live.
 
-`agent/loop.py` is that cycle in code. Keep a record of what each edit did to
-each workload; the hidden scores are the only ones that count, and they move
-for reasons the public three will not always show you.
+Use `bin/dryft` to package, submit, and wait on a run. `agent/loop.py` is
+where you record what each edit did and decide the next change; the hidden
+scores are the only ones that count, and they move for reasons the public
+three will not always show you.
 
 ## Failure codes
 

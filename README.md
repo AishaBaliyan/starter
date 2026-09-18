@@ -109,8 +109,7 @@ cd engine && tar -czf ../submission.tar.gz engine.py kernels
 ```
 
 Name the files explicitly. `tar -C engine .` writes paths such as `./engine.py`,
-which the platform rejects. Use `agent/loop.py` to automate the submit-and-run
-cycle.
+which the platform rejects.
 
 Limits: 2 MiB compressed, 16 MiB expanded, 200 files. Allowed extensions:
 `.py .pyi .yaml .yml .json .toml .txt .md .cfg .ini`. No weights, credentials,

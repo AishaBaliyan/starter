@@ -11,29 +11,30 @@ Python building blocks for an automated research loop.
 | --- | --- |
 | `package.py` | Builds the archive from `engine/`, and refuses what the platform would refuse. |
 | `client.py` | The submission API over the standard library. No dependencies. |
-| `loop.py` | One turn: package, submit, run, print what it measured. |
+| `loop.py` | One turn of a research loop: package, submit, run, print what it measured. |
 
-The installed CLI already knows the event server. This Python loop does not, so
-set both values before running it:
+Submit and wait with the installed CLI. It already knows the event server, so
+most people only need `DRYFT_TOKEN`:
 
 ```sh
-export DRYFT_API=https://dryft-user-testing.vercel.app   # no /api suffix
 export DRYFT_TOKEN=dryft_pat_...                   # API tokens
 
-python agent/loop.py                  # public samples, about two minutes
-python agent/loop.py --mode official  # five samples, scored, ranked
+../bin/dryft submit engine
+../bin/dryft run <submission-id> --mode public --wait 3000
+../bin/dryft run <submission-id> --mode official --wait 3000
 ```
 
-`loop.py` prints a row per workload with the measured time, the speedup over
-native, and the time-to-first-token and time-per-output-token ratios. Those two
-ratios are gates on an official run — above 1.10 and the workload fails — but a
-public run only reports them, so read them before you promote a change.
+Set `DRYFT_API` only if `client.py` is talking to a local, staging, or
+self-hosted server (no `/api` suffix). The CLI does not need it for the
+public event.
+
+`report` in `loop.py` prints a row per workload with the measured time, the
+speedup over native, and the time-to-first-token and time-per-output-token
+ratios. Those two ratios are gates on an official run — above 1.10 and the
+workload fails — but a public run only reports them, so read them before you
+promote a change.
 
 `plan_next_edit` in `loop.py` is the part you write: given what previous
-attempts measured, decide what to change about `engine/engine.py`. Keep a record
-of every attempt. Only the three hidden workloads are scored, and the public
-three will not always explain why a score moved.
-
-Exit codes are `0` passed, `1` the request or the archive was refused, `2` the
-run failed, `3` polling gave up. A poll that gives up has cancelled nothing:
-keep the run id and look at it again rather than starting a second run.
+attempts measured, decide what to change about `engine/engine.py`. Keep a
+record of every attempt. Only the three hidden workloads are scored, and the
+public three will not always explain why a score moved.
