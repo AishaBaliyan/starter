@@ -97,24 +97,26 @@ class Dryft:
             "POST", "/api/v1/submissions", body=body,
             content_type=f"multipart/form-data; boundary={boundary}",
         )
-        return result["id"]
+        return result["submission"]["id"]
 
     def start_run(self, submission_id: str, mode: str = "public",
                   idempotency_key: str | None = None) -> dict:
         """Start a run. Reuse the same key to replay rather than duplicate one."""
         if mode not in ("public", "official"):
             raise ValueError("mode is 'public' or 'official'")
-        return self._send(
+        result = self._send(
             "POST", f"/api/v1/submissions/{submission_id}/runs",
             body=json.dumps({"mode": mode}).encode(),
             content_type="application/json",
             extra_headers={"Idempotency-Key": idempotency_key or str(uuid.uuid4())},
         )
 
-    def run(self, run_id: str) -> dict:
-        return self._send("GET", f"/api/v1/runs/{run_id}")
+        return result["run"]
 
-    def logs(self, run_id: str, after: int = 0, limit: int = 200) -> dict:
+    def run(self, run_id: str) -> dict:
+        return self._send("GET", f"/api/v1/runs/{run_id}")["run"]
+
+    def logs(self, run_id: str, after: int = -1, limit: int = 200) -> dict:
         query = urllib.parse.urlencode({"after": after, "limit": limit})
         return self._send("GET", f"/api/v1/runs/{run_id}/logs?{query}")
 

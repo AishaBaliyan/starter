@@ -19,14 +19,20 @@ same guide for offline use.
    account and make the new repository private if you want to keep your engine private.
 2. Clone your new repository to your computer.
 3. [Sign in to Dryft](https://dryft-user-testing.vercel.app/) with GitHub and
-   create a team or join one. Join requests need a team admin's approval.
-4. Open [Submissions](https://dryft-user-testing.vercel.app/bench), select
+   create a team or join one with a six-character invite code from a team owner
+   or admin. The code joins you immediately.
+4. As a team owner or admin, open [Submissions](https://dryft-user-testing.vercel.app/bench), select
    **Connect a repository**, and grant the GitHub App access to your new repository.
    Set **Engine folder** to `engine`.
 5. Push to your default branch to run the public samples, or use **Run now** in
    [Repositories](https://dryft-user-testing.vercel.app/repos) for the initial commit.
    Check the results before changing the engine. Public runs give feedback;
    request an official evaluation to appear on the leaderboard.
+
+Ordinary members can run a repository after an owner or admin connects it.
+If you cannot connect a repository, open Submissions and use **Download starter
+archive** and **Submit an archive**. Uploading does not start a run: open the
+new submission and select **Run sample cases**.
 
 No local GPU or Python setup is needed for this workflow. Edit `engine/engine.py`
 and push again to test an improvement. For the full guide, see
