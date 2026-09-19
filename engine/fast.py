@@ -40,6 +40,31 @@ class FastDecoder:
         self.use_graph = self.device.type == "cuda"
         self.shape = None
         self.graph = None
+        self._merge_projections()
+
+    def _merge_projections(self):
+        """One weight per fused GEMM (qkv, gate+up), as views over the originals.
+
+        The Transformers modules keep working (their weights alias the merged
+        buffer), so the native fallback needs no second copy of the weights.
+        """
+        self.w_qkv, self.w_gu = [], []
+        for layer in self.base.layers:
+            attn, mlp = layer.self_attn, layer.mlp
+            for owner, names, out in (
+                (attn, ("q_proj", "k_proj", "v_proj"), self.w_qkv),
+                (mlp, ("gate_proj", "up_proj"), self.w_gu),
+            ):
+                mods = [getattr(owner, n) for n in names]
+                merged = torch.cat([m.weight.data for m in mods], dim=0).contiguous()
+                start = 0
+                for m in mods:
+                    rows = m.weight.shape[0]
+                    m.weight.data = merged[start : start + rows]
+                    start += rows
+                out.append(merged)
+        self.q_size = self.n_heads * self.head_dim
+        self.kv_size = self.n_kv * self.head_dim
 
     # ------------------------------------------------------------------ ops
     def _norm(self, module, x):
@@ -51,9 +76,10 @@ class FastDecoder:
         B, T, _ = x.shape
         attn = layer.self_attn
         h = self._norm(layer.input_layernorm, x)
-        q = self._norm(attn.q_norm, attn.q_proj(h).view(B, T, self.n_heads, self.head_dim)).transpose(1, 2)
-        k = self._norm(attn.k_norm, attn.k_proj(h).view(B, T, self.n_kv, self.head_dim)).transpose(1, 2)
-        v = attn.v_proj(h).view(B, T, self.n_kv, self.head_dim).transpose(1, 2)
+        q, k, v = F.linear(h, self.w_qkv[i]).split((self.q_size, self.kv_size, self.kv_size), dim=-1)
+        q = self._norm(attn.q_norm, q.view(B, T, self.n_heads, self.head_dim)).transpose(1, 2)
+        k = self._norm(attn.k_norm, k.view(B, T, self.n_kv, self.head_dim)).transpose(1, 2)
+        v = v.reshape(B, T, self.n_kv, self.head_dim).transpose(1, 2)
         q = q * cos + _rotate_half(q) * sin
         k = k * cos + _rotate_half(k) * sin
 
@@ -73,7 +99,8 @@ class FastDecoder:
             o = o.reshape(B, 1, self.n_heads * self.head_dim)
 
         x = x + attn.o_proj(o)
-        return x + layer.mlp(self._norm(layer.post_attention_layernorm, x))
+        gate, up = F.linear(self._norm(layer.post_attention_layernorm, x), self.w_gu[i]).chunk(2, dim=-1)
+        return x + layer.mlp.down_proj(layer.mlp.act_fn(gate) * up)
 
     def _forward(self, x, cos, sin, prefill):
         for i, layer in enumerate(self.base.layers):
